@@ -10,6 +10,7 @@ import time
 
 class TTLOrderedDictTest(TestCase):
     """ TTLOrderedDict tests """
+
     def test_update_no_ttl(self):
         """ Test update() call """
         ttl_dict = TTLOrderedDict(3)
@@ -26,6 +27,15 @@ class TTLOrderedDictTest(TestCase):
         self.assertEqual(sorted(ttl_dict.keys()), sorted(['a', 'b']))
         time.sleep(2)
         ttl_dict._purge()
+        self.assertEqual(len(ttl_dict), 0)
+        self.assertEqual(list(ttl_dict.keys()), [])
+
+    def test_schedule_purge(self):
+        """ Test that calling _purge() removes expired items """
+        ttl_dict = TTLOrderedDict(1, a=1, b=2)
+        ttl_dict.schedule_purge_job()
+        self.assertEqual(sorted(ttl_dict.keys()), sorted(['a', 'b']))
+        time.sleep(2)
         self.assertEqual(len(ttl_dict), 0)
         self.assertEqual(list(ttl_dict.keys()), [])
 
@@ -85,7 +95,7 @@ class TTLOrderedDictTest(TestCase):
         ttl_dict = TTLOrderedDict(60, a=1, b=2)
         self.assertFalse(ttl_dict.is_expired('a'))
         self.assertFalse(ttl_dict.is_expired('a', now=now))
-        self.assertTrue(ttl_dict.is_expired('a', now=now+61))
+        self.assertTrue(ttl_dict.is_expired('a', now=now + 61))
 
         # remove=False, so nothing should be gone
         self.assertEqual(len(ttl_dict), 2)
@@ -115,4 +125,3 @@ class TTLOrderedDictTest(TestCase):
         self.assertEqual(ttl_dict.get('b', "default"), "default")
         time.sleep(2)
         self.assertEqual(ttl_dict.get('a', "default"), "default")
-

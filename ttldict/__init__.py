@@ -1,8 +1,14 @@
 from collections import OrderedDict
 from threading import RLock
 import time
+import schedule
 
 __all__ = ['TTLOrderedDict']
+
+"""
+    Can schedule job which will run after some duration of time which will clear expired keys
+    Default is after every 1 second
+"""
 
 
 class TTLOrderedDict(OrderedDict):
@@ -10,6 +16,7 @@ class TTLOrderedDict(OrderedDict):
     OrderedDict with TTL
     Extra args and kwargs are passed to initial .update() call
     """
+
     def __init__(self, default_ttl, *args, **kwargs):
         """
         Be warned, if you use this with Python versions earlier than 3.6
@@ -20,6 +27,11 @@ class TTLOrderedDict(OrderedDict):
         self._lock = RLock()
         super().__init__()
         self.update(*args, **kwargs)
+
+    def schedule_purge_job(self, seconds=0):
+        if seconds == 0:
+            seconds = self._default_ttl
+        schedule.every(seconds).seconds.do(self._purge)
 
     def __repr__(self):
         return '<TTLOrderedDict@%#08x; ttl=%r, OrderedDict=%r;>' % (
@@ -50,7 +62,7 @@ class TTLOrderedDict(OrderedDict):
         """Set the key expire timestamp"""
         with self._lock:
             value = self.__getitem__(key)
-            super().__setitem__(key,  (timestamp, value))
+            super().__setitem__(key, (timestamp, value))
 
     def is_expired(self, key, now=None):
         """ Check if key has expired, and return it if so"""
@@ -84,7 +96,7 @@ class TTLOrderedDict(OrderedDict):
                 expire = None
             else:
                 expire = time.time() + self._default_ttl
-            super().__setitem__(key,  (expire, value))
+            super().__setitem__(key, (expire, value))
 
     def __delitem__(self, key):
         with self._lock:
