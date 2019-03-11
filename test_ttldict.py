@@ -39,6 +39,22 @@ class TTLOrderedDictTest(TestCase):
         self.assertEqual(len(ttl_dict), 0)
         self.assertEqual(list(ttl_dict.keys()), [])
 
+    def test_schedule_purge_multiple_run(self):
+        """ Test that calling _purge() removes expired items """
+        ttl_dict = TTLOrderedDict(1, a=1, b=2)
+        ttl_dict.schedule_purge_job()
+        self.assertEqual(sorted(ttl_dict.keys()), sorted(['a', 'b']))
+        time.sleep(2)
+        self.assertEqual(len(ttl_dict), 0)
+        self.assertEqual(list(ttl_dict.keys()), [])
+
+        ttl_dict['a'] = 1
+        ttl_dict['b'] = 2
+        self.assertEqual(sorted(ttl_dict.keys()), sorted(['a', 'b']))
+        time.sleep(2)
+        self.assertEqual(len(ttl_dict), 0)
+        self.assertEqual(list(ttl_dict.keys()), [])
+
     def test_expire_at(self):
         """ Test expire_at """
         ttl_dict = TTLOrderedDict(60)
